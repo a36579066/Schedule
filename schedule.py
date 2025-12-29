@@ -372,9 +372,16 @@ with colA:
             st.rerun()
 
     # Optional: editing panel (separate from selection table)
-    with st.expander("Edit building data (add/update)", expanded=False):
-        st.session_state.bld_df = st.data_editor(
-            st.session_state.bld_df,
+    tab_select, tab_edit = st.tabs(["Select", "Edit"])
+
+    with tab_edit:
+        st.caption("Edit here, then click Apply. This avoids rerun lag while typing.")
+
+        if "bld_df_draft" not in st.session_state:
+            st.session_state.bld_df_draft = st.session_state.bld_df.copy()
+
+        draft = st.data_editor(
+            st.session_state.bld_df_draft,
             num_rows="dynamic",
             use_container_width=True,
             column_config={
@@ -382,8 +389,23 @@ with colA:
                 "duration_hours": st.column_config.NumberColumn("Hours", min_value=0, step=1),
                 "duration_minutes": st.column_config.NumberColumn("Minutes", min_value=0, max_value=59, step=5),
             },
-            key="bld_editor_only",
+            key="bld_editor_draft",
         )
+
+        c1, c2 = st.columns([1, 1])
+        with c1:
+            if st.button("Apply changes", type="primary", use_container_width=True):
+                st.session_state.bld_df = draft.copy()
+                st.session_state.bld_df_draft = st.session_state.bld_df.copy()
+                st.toast("Saved.")
+                st.rerun()
+
+        with c2:
+            if st.button("Discard changes", use_container_width=True):
+                st.session_state.bld_df_draft = st.session_state.bld_df.copy()
+                st.toast("Discarded.")
+                st.rerun()
+
 
 with colB:
     st.subheader("2) remaining completion time")
